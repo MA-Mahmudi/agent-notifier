@@ -1,0 +1,9 @@
+{
+  "uuid": "agent-notifier@mmmohebi.github.io",
+  "name": "Agent Notifier",
+  "description": "Shows local Codex and Claude Code session activity",
+  "shell-version": ["45", "46", "47", "48", "49"],
+  "settings-schema": "io.github.mmmohebi.AgentNotifier",
+  "url": "https://github.com/MrMohebi/agent-notifier",
+  "version": 4
+}

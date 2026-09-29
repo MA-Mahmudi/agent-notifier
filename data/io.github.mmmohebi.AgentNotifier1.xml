@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/io/github/mmmohebi/AgentNotifier">
+  <interface name="io.github.mmmohebi.AgentNotifier1">
+    <method name="ListSessions"><arg name="since_timestamp" type="x" direction="in"/><arg name="sessions_json" type="s" direction="out"/></method>
+    <method name="IngestEvent"><arg name="source" type="s" direction="in"/><arg name="payload" type="s" direction="in"/><arg name="result_json" type="s" direction="out"/></method>
+    <method name="GetServiceStatus"><arg name="status_json" type="s" direction="out"/></method>
+    <method name="SetSessionNotifications"><arg name="session_id" type="s" direction="in"/><arg name="enabled" type="b" direction="in"/><arg name="result_json" type="s" direction="out"/></method>
+    <method name="SetAllSessionNotifications"><arg name="enabled" type="b" direction="in"/><arg name="result_json" type="s" direction="out"/></method>
+    <method name="SetSessionHidden"><arg name="session_id" type="s" direction="in"/><arg name="hidden" type="b" direction="in"/><arg name="result_json" type="s" direction="out"/></method>
+    <method name="ConfigureDestination"><arg name="name" type="s" direction="in"/><arg name="kind" type="s" direction="in"/><arg name="endpoint" type="s" direction="in"/><arg name="topic" type="s" direction="in"/><arg name="enabled" type="b" direction="in"/><arg name="token" type="s" direction="in"/><arg name="result_json" type="s" direction="out"/></method>
+    <method name="RemoveDestination"><arg name="name" type="s" direction="in"/><arg name="result_json" type="s" direction="out"/></method>
+    <method name="TestDestination"><arg name="name" type="s" direction="in"/><arg name="result_json" type="s" direction="out"/></method>
+    <signal name="SessionsChanged"><arg name="revision" type="t"/></signal>
+  </interface>
+</node>

@@ -1,0 +1,224 @@
+.agent-notifier-panel {
+    spacing: 6px;
+    margin: 0 2px;
+}
+
+.agent-notifier-chip {
+    spacing: 6px;
+    padding: 2px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 999px;
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.agent-notifier-chip-working {
+    background-color: rgba(53, 132, 228, 0.18);
+}
+
+.agent-notifier-chip-needs-attention,
+.agent-notifier-chip-failed {
+    background-color: rgba(224, 27, 36, 0.18);
+}
+
+.agent-notifier-chip-completed {
+    background-color: rgba(38, 162, 105, 0.18);
+}
+
+.agent-notifier-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+}
+
+.agent-notifier-working {
+    background-color: #62a0ea;
+}
+
+.agent-notifier-needs-attention,
+.agent-notifier-failed {
+    background-color: #f66151;
+}
+
+.agent-notifier-completed {
+    background-color: #57e389;
+}
+
+.agent-notifier-ended,
+.agent-notifier-unknown {
+    background-color: #9a9996;
+}
+
+.agent-notifier-idle {
+    opacity: 0.58;
+}
+
+.agent-notifier-recent-count {
+    min-width: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    color: #deddda;
+    background-color: rgba(255, 255, 255, 0.10);
+    font-size: 0.78em;
+    font-weight: bold;
+}
+
+.agent-notifier-error,
+.agent-notifier-failed-text,
+.agent-notifier-needs-attention-text {
+    color: #f66151;
+    font-weight: bold;
+}
+
+.agent-notifier-working-text {
+    color: #62a0ea;
+}
+
+.agent-notifier-completed-text {
+    color: #57e389;
+}
+
+.agent-notifier-ended-text,
+.agent-notifier-unknown-text,
+.agent-notifier-muted {
+    color: #9a9996;
+}
+
+.agent-notifier-more {
+    color: #deddda;
+    font-size: 0.85em;
+    padding: 0 2px;
+}
+
+.agent-notifier-scroll {
+    width: 470px;
+    max-height: 540px;
+    padding: 4px 0 8px;
+}
+
+.agent-notifier-menu-header {
+    padding: 12px 14px 10px;
+}
+
+.agent-notifier-menu-title {
+    font-size: 1.08em;
+    font-weight: bold;
+}
+
+.agent-notifier-muted {
+    font-size: 0.82em;
+    padding-top: 2px;
+}
+
+.agent-notifier-icon-button {
+    padding: 7px;
+    border-radius: 999px;
+    transition-duration: 120ms;
+}
+
+.agent-notifier-icon-button:hover,
+.agent-notifier-icon-button:focus {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.agent-notifier-quick-actions {
+    padding: 3px 10px 7px;
+}
+
+.agent-notifier-actions-box,
+.agent-notifier-button-content,
+.agent-notifier-card-footer {
+    spacing: 7px;
+}
+
+.agent-notifier-action-button,
+.agent-notifier-card-action {
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 9px;
+    background-color: rgba(255, 255, 255, 0.07);
+    font-size: 0.86em;
+    font-weight: bold;
+    transition-duration: 120ms;
+}
+
+.agent-notifier-action-button:hover,
+.agent-notifier-action-button:focus,
+.agent-notifier-card-action:hover,
+.agent-notifier-card-action:focus {
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+.agent-notifier-action-enable,
+.agent-notifier-notify-enabled {
+    color: #57e389;
+    background-color: rgba(38, 162, 105, 0.16);
+}
+
+.agent-notifier-action-disable,
+.agent-notifier-notify-disabled {
+    color: #f6f5f4;
+    background-color: rgba(192, 191, 188, 0.10);
+}
+
+.agent-notifier-action-hidden,
+.agent-notifier-card-hide {
+    color: #c0bfbc;
+}
+
+.agent-notifier-large-action-icon {
+    icon-size: 18px;
+}
+
+.agent-notifier-card {
+    spacing: 0;
+    margin: 4px 10px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.045);
+}
+
+.agent-notifier-card-working {
+    border-left: 3px solid #62a0ea;
+}
+
+.agent-notifier-card-needs-attention,
+.agent-notifier-card-failed {
+    border-left: 3px solid #f66151;
+}
+
+.agent-notifier-card-completed {
+    border-left: 3px solid #57e389;
+}
+
+.agent-notifier-card-title {
+    font-weight: bold;
+}
+
+.agent-notifier-card-preview {
+    color: #deddda;
+    font-size: 0.91em;
+    padding-top: 7px;
+}
+
+.agent-notifier-card-footer {
+    padding-top: 9px;
+}
+
+.agent-notifier-card-status {
+    font-size: 0.82em;
+    font-weight: bold;
+    padding-top: 8px;
+}
+
+.agent-notifier-card-hidden {
+    opacity: 0.78;
+}
+
+.agent-notifier-empty,
+.agent-notifier-unavailable {
+    margin: 8px 10px 12px;
+    padding: 14px;
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.05);
+}

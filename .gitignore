@@ -1,0 +1,7 @@
+/target/
+/dist/
+*.zip
+extension/schemas/gschemas.compiled
+.idea/
+__pycache__/
+*.pyc

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="io.github.mmmohebi.AgentNotifier" path="/io/github/mmmohebi/AgentNotifier/">
+    <key name="refresh-seconds" type="u">
+      <range min="10" max="300"/>
+      <default>30</default>
+      <summary>Fallback refresh interval</summary>
+    </key>
+    <key name="history-hours" type="u">
+      <range min="1" max="24"/>
+      <default>24</default>
+      <summary>Hours of recent sessions shown in the popup</summary>
+    </key>
+    <key name="topbar-completed-minutes" type="u">
+      <range min="1" max="120"/>
+      <default>10</default>
+      <summary>Minutes completed sessions remain visible in the top bar</summary>
+    </key>
+  </schema>
+</schemalist>

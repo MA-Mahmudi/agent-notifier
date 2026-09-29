@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=io.github.mmmohebi.AgentNotifier
+Exec=@LIBEXECDIR@/agent-notifier daemon
+SystemdService=agent-notifier.service

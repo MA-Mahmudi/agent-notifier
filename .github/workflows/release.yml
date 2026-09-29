@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version without the leading v (for example 0.1.0)
+        required: true
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  package:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${{ inputs.version }}"
+          fi
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release version: $version" >&2
+            exit 1
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Install packaging tools
+        run: sudo apt-get update && sudo apt-get install --yes glib2.0-bin rpm zip
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
+
+      - name: Use stable Rust
+        run: rustup default stable
+
+      - name: Test
+        run: make check && cargo test --locked && node --check extension/extension.js && node --check extension/prefs.js
+
+      - name: Build
+        run: cargo build --release --locked
+
+      - name: Build release packages
+        run: ./scripts/build-release-packages.sh "${{ steps.version.outputs.value }}"
+
+      - name: Generate checksums
+        working-directory: dist
+        run: sha256sum agent-notifier-* agent-notifier_* > SHA256SUMS
+
+      - name: Attest release artifacts
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            dist/agent-notifier-*
+            dist/agent-notifier_*
+            dist/SHA256SUMS
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: v${{ steps.version.outputs.value }}
+        shell: bash
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --generate-notes --title "Agent Notifier $RELEASE_TAG"
+          fi
+          gh release upload "$RELEASE_TAG" dist/agent-notifier-* dist/agent-notifier_* dist/SHA256SUMS --clobber
