@@ -336,7 +336,7 @@ Run a complete local package build on Debian/Ubuntu with `dpkg-deb` and `rpmbuil
 
 ```sh
 cargo build --release --locked
-./scripts/build-release-packages.sh 0.1.0
+./scripts/build-release-packages.sh 0.1.1
 ```
 
 ## CI and releases
@@ -355,15 +355,15 @@ Tags matching `v*` run the release workflow and publish:
 To release:
 
 ```sh
-git tag -s v0.1.0 -m 'Agent Notifier 0.1.0'
-git push origin v0.1.0
+git tag -s v0.1.1 -m 'Agent Notifier 0.1.1'
+git push origin v0.1.1
 ```
 
 Verify downloaded artifacts:
 
 ```sh
 sha256sum -c SHA256SUMS
-gh attestation verify agent-notifier-0.1.0-linux-x86_64.tar.gz \
+gh attestation verify agent-notifier-0.1.1-linux-x86_64.tar.gz \
   --repo MrMohebi/agent-notifier
 ```
 

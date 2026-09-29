@@ -102,5 +102,6 @@ fn read_metadata(agent: Agent, path: &Path) -> Option<NormalizedEvent> {
     Some(NormalizedEvent {
         event_id: format!("bootstrap:{}:{}", session.agent.as_str(), id),
         session,
+        starts_session: false,
     })
 }

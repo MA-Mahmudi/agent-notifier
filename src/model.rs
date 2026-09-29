@@ -74,6 +74,7 @@ pub struct Session {
 pub struct NormalizedEvent {
     pub session: Session,
     pub event_id: String,
+    pub starts_session: bool,
 }
 
 fn first_str<'a>(v: &'a Value, keys: &[&str]) -> Option<&'a str> {
@@ -158,6 +159,7 @@ pub fn normalize(
     let raw_key = format!("{}:{id}:{event}:{:x}", agent.as_str(), hasher.finish());
     Ok(NormalizedEvent {
         event_id: raw_key,
+        starts_session: event.eq_ignore_ascii_case("SessionStart"),
         session: Session {
             id: format!("{}:{id}", agent.as_str()),
             agent,

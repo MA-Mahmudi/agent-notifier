@@ -84,7 +84,7 @@ impl Store {
             .optional()?
             .unwrap_or(0)
             != 0;
-        tx.execute("INSERT INTO sessions(id,agent,title,project,state,preview,created_at,updated_at,live,notifications_enabled,hidden) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11) ON CONFLICT(id) DO UPDATE SET title=excluded.title,project=excluded.project,state=excluded.state,preview=excluded.preview,updated_at=excluded.updated_at,live=1", params![s.id,s.agent.as_str(),s.title,s.project,s.state.as_str(),s.preview,s.created_at.timestamp(),s.updated_at.timestamp(),s.live,notifications_enabled,s.hidden])?;
+        tx.execute("INSERT INTO sessions(id,agent,title,project,state,preview,created_at,updated_at,live,notifications_enabled,hidden) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11) ON CONFLICT(id) DO UPDATE SET title=excluded.title,project=excluded.project,state=excluded.state,preview=excluded.preview,updated_at=excluded.updated_at,live=1,hidden=CASE WHEN ?12 THEN 0 ELSE sessions.hidden END", params![s.id,s.agent.as_str(),s.title,s.project,s.state.as_str(),s.preview,s.created_at.timestamp(),s.updated_at.timestamp(),s.live,notifications_enabled,s.hidden,e.starts_session])?;
         tx.execute(
             "INSERT INTO events VALUES(?1,?2)",
             params![e.event_id, Utc::now().timestamp()],
@@ -305,6 +305,40 @@ mod tests {
         assert!(!store.global_notifications_enabled().unwrap());
         assert!(!store.notifications_enabled("codex:1").unwrap());
         assert!(!store.notifications_enabled("codex:2").unwrap());
+    }
+
+    #[test]
+    fn resumed_session_is_visible_but_same_run_activity_stays_hidden() {
+        let d = tempfile::tempdir().unwrap();
+        let mut store = Store::open(&d.path().join("a.db")).unwrap();
+        let now = Utc::now();
+
+        let initial = normalize(
+            Agent::Codex,
+            r#"{"session_id":"1","hook_event_name":"Stop"}"#,
+            now,
+        )
+        .unwrap();
+        store.ingest(&initial).unwrap();
+        store.set_hidden("codex:1", true).unwrap();
+
+        let same_run = normalize(
+            Agent::Codex,
+            r#"{"session_id":"1","hook_event_name":"UserPromptSubmit","prompt":"again"}"#,
+            now + Duration::seconds(1),
+        )
+        .unwrap();
+        store.ingest(&same_run).unwrap();
+        assert!(store.list(0).unwrap()[0].hidden);
+
+        let resumed = normalize(
+            Agent::Codex,
+            r#"{"session_id":"1","hook_event_name":"SessionStart"}"#,
+            now + Duration::seconds(2),
+        )
+        .unwrap();
+        store.ingest(&resumed).unwrap();
+        assert!(!store.list(0).unwrap()[0].hidden);
     }
 
     #[test]
