@@ -9,6 +9,8 @@ const EVENTS: &[&str] = &[
     "SessionStart",
     "UserPromptSubmit",
     "PermissionRequest",
+    "PostToolUse",
+    "PostToolUseFailure",
     "Notification",
     "Stop",
     "StopFailure",
@@ -74,7 +76,12 @@ fn edit(path: &Path, source: &str, binary: &Path, remove: bool) -> anyhow::Resul
         .context("hooks must be an object")?;
     let cmd = command(source, binary);
     for event in EVENTS {
-        if source == "codex" && matches!(*event, "Notification" | "StopFailure") {
+        if source == "codex"
+            && matches!(
+                *event,
+                "Notification" | "PostToolUseFailure" | "StopFailure"
+            )
+        {
             continue;
         }
         if source == "claude" && *event == "Interrupt" {
@@ -139,6 +146,11 @@ mod tests {
         let v: Value = serde_json::from_str(&std::fs::read_to_string(&p).unwrap()).unwrap();
         assert_eq!(v["theme"], "dark");
         assert_eq!(v["hooks"]["Stop"].as_array().unwrap().len(), 2);
+        assert_eq!(v["hooks"]["PostToolUse"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            v["hooks"]["PostToolUseFailure"].as_array().unwrap().len(),
+            1
+        );
         edit(&p, "claude", bin, true).unwrap();
         assert_eq!(
             serde_json::from_str::<Value>(&std::fs::read_to_string(&p).unwrap()).unwrap()["hooks"]

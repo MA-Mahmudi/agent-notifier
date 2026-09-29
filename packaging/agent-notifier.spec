@@ -1,4 +1,4 @@
-%global package_version %{?package_version}%{!?package_version:0.1.2}
+%global package_version %{?package_version}%{!?package_version:0.1.3}
 
 Name:           agent-notifier
 Version:        %{package_version}

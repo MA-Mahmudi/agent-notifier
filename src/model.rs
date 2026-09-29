@@ -129,6 +129,7 @@ pub fn normalize(
     let state = match event.to_ascii_lowercase().as_str() {
         "sessionstart" => State::Unknown,
         "userpromptsubmit" => State::Working,
+        "posttooluse" | "posttoolusefailure" => State::Working,
         "permissionrequest" | "notification" => State::NeedsAttention,
         "stopfailure" => State::Failed,
         "interrupt" | "sessionend" => State::Ended,
@@ -207,5 +208,15 @@ mod tests {
         )
         .unwrap();
         assert_eq!(e.session.state, State::Working);
+    }
+
+    #[test]
+    fn post_tool_use_returns_session_to_working() {
+        for event in ["PostToolUse", "PostToolUseFailure"] {
+            let payload =
+                format!(r#"{{"session_id":"x","hook_event_name":"{event}","tool_name":"Bash"}}"#);
+            let normalized = normalize(Agent::Claude, &payload, Utc::now()).unwrap();
+            assert_eq!(normalized.session.state, State::Working);
+        }
     }
 }

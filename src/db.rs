@@ -119,7 +119,7 @@ impl Store {
             .optional()?
             .unwrap_or(0)
             != 0;
-        tx.execute("INSERT INTO sessions(id,agent,title,project,state,preview,created_at,updated_at,live,notifications_enabled,hidden) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11) ON CONFLICT(id) DO UPDATE SET title=excluded.title,project=excluded.project,state=excluded.state,preview=excluded.preview,updated_at=excluded.updated_at,live=1", params![s.id,s.agent.as_str(),s.title,s.project,s.state.as_str(),s.preview,s.created_at.timestamp(),s.updated_at.timestamp(),s.live,notifications_enabled,s.hidden])?;
+        tx.execute("INSERT INTO sessions(id,agent,title,project,state,preview,created_at,updated_at,live,notifications_enabled,hidden) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11) ON CONFLICT(id) DO UPDATE SET title=CASE WHEN excluded.title='Agent session' THEN sessions.title ELSE excluded.title END,project=CASE WHEN excluded.project='' THEN sessions.project ELSE excluded.project END,state=excluded.state,preview=CASE WHEN excluded.preview='' THEN sessions.preview ELSE excluded.preview END,updated_at=excluded.updated_at,live=1", params![s.id,s.agent.as_str(),s.title,s.project,s.state.as_str(),s.preview,s.created_at.timestamp(),s.updated_at.timestamp(),s.live,notifications_enabled,s.hidden])?;
         tx.execute(
             "INSERT INTO events VALUES(?1,?2)",
             params![e.event_id, Utc::now().timestamp()],
@@ -454,6 +454,37 @@ mod tests {
         .unwrap();
         store.ingest(&resumed).unwrap();
         assert!(!store.list(0).unwrap()[0].hidden);
+    }
+
+    #[test]
+    fn post_tool_use_clears_attention_during_the_same_turn() {
+        let d = tempfile::tempdir().unwrap();
+        let mut store = Store::open(&d.path().join("a.db")).unwrap();
+        let now = Utc::now();
+
+        for (offset, event) in [
+            (
+                0,
+                r#"{"session_id":"1","hook_event_name":"UserPromptSubmit","prompt":"run it"}"#,
+            ),
+            (
+                1,
+                r#"{"session_id":"1","hook_event_name":"PermissionRequest","tool_name":"Bash"}"#,
+            ),
+            (
+                2,
+                r#"{"session_id":"1","hook_event_name":"PostToolUse","tool_name":"Bash"}"#,
+            ),
+        ] {
+            let normalized =
+                normalize(Agent::Codex, event, now + Duration::seconds(offset)).unwrap();
+            store.ingest(&normalized).unwrap();
+        }
+
+        let session = &store.list(0).unwrap()[0];
+        assert_eq!(session.state, State::Working);
+        assert_eq!(session.title, "run it");
+        assert_eq!(session.preview, "run it");
     }
 
     #[test]
