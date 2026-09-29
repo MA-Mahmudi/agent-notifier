@@ -165,6 +165,10 @@
     color: #c0bfbc;
 }
 
+.agent-notifier-card-copy {
+    color: #99c1f1;
+}
+
 .agent-notifier-large-action-icon {
     icon-size: 18px;
 }

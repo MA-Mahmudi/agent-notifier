@@ -75,6 +75,7 @@ pub struct NormalizedEvent {
     pub session: Session,
     pub event_id: String,
     pub starts_session: bool,
+    pub has_prompt: bool,
 }
 
 fn first_str<'a>(v: &'a Value, keys: &[&str]) -> Option<&'a str> {
@@ -160,6 +161,7 @@ pub fn normalize(
     Ok(NormalizedEvent {
         event_id: raw_key,
         starts_session: event.eq_ignore_ascii_case("SessionStart"),
+        has_prompt: event.eq_ignore_ascii_case("UserPromptSubmit"),
         session: Session {
             id: format!("{}:{id}", agent.as_str()),
             agent,

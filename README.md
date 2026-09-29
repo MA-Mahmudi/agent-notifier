@@ -14,7 +14,7 @@ Agent Notifier is a GNOME Shell extension and local Rust companion for monitorin
 - Live Codex and Claude Code session chips in the GNOME top bar.
 - Blinking blue working status, red attention/failure status, and temporary green completion status.
 - Compact cards with project, title, response/question preview, state, and relative time.
-- Large per-session **Notify on/off** and **Hide/Restore** controls.
+- Large per-session **Copy resume**, **Notify on/off**, and **Hide/Restore** controls.
 - Quick **Enable all**, **Disable all**, and **Hidden sessions** actions.
 - Notifications are off by default. Global and per-session choices persist across reboots.
 - Optional ntfy and generic bearer-authenticated webhook destinations.
@@ -24,7 +24,7 @@ Agent Notifier is a GNOME Shell extension and local Rust companion for monitorin
 - Local SQLite history with redacted previews and a rolling 24-hour retention window.
 - Atomic disk spooling when the session D-Bus is temporarily unavailable.
 
-Agent Notifier is informational only. It cannot resume a session, answer a question, approve a permission request, or control either agent.
+Agent Notifier is informational only. It can copy a safe CLI resume command, but it never executes that command, answers a question, approves a permission request, or controls either agent.
 
 ## How it works
 
@@ -135,6 +135,8 @@ Existing Codex and Claude settings receive timestamped backups before they are c
 3. Open the gear button to configure an ntfy or webhook destination.
 4. Save the destination, then use **Send test**.
 5. Start a new Codex or Claude Code turn and watch its state update.
+
+Use **Copy resume** on a session card to copy `codex resume SESSION_ID` or `claude --resume SESSION_ID` without closing the popup.
 
 Notifications are disabled by default. Enabling or disabling all sessions becomes the persistent default for sessions created after the next boot as well. An individual session can still override that default.
 
@@ -336,7 +338,7 @@ Run a complete local package build on Debian/Ubuntu with `dpkg-deb` and `rpmbuil
 
 ```sh
 cargo build --release --locked
-./scripts/build-release-packages.sh 0.1.1
+./scripts/build-release-packages.sh 0.1.2
 ```
 
 ## CI and releases
@@ -355,15 +357,15 @@ Tags matching `v*` run the release workflow and publish:
 To release:
 
 ```sh
-git tag -s v0.1.1 -m 'Agent Notifier 0.1.1'
-git push origin v0.1.1
+git tag -s v0.1.2 -m 'Agent Notifier 0.1.2'
+git push origin v0.1.2
 ```
 
 Verify downloaded artifacts:
 
 ```sh
 sha256sum -c SHA256SUMS
-gh attestation verify agent-notifier-0.1.1-linux-x86_64.tar.gz \
+gh attestation verify agent-notifier-0.1.2-linux-x86_64.tar.gz \
   --repo MrMohebi/agent-notifier
 ```
 

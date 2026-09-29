@@ -358,6 +358,18 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
             y_align: Clutter.ActorAlign.CENTER,
         }));
 
+        const copyButton = this._actionButton(
+            'edit-copy-symbolic', 'Copy resume', 'agent-notifier-card-copy');
+        copyButton.add_style_class_name('agent-notifier-card-action');
+        copyButton.connect('clicked', () => {
+            St.Clipboard.get_default().set_text(
+                St.ClipboardType.CLIPBOARD,
+                this._resumeCommand(session)
+            );
+            this._setCopyButtonContent(copyButton, true);
+        });
+        footer.add_child(copyButton);
+
         const notifyButton = new St.Button({can_focus: true, reactive: true});
         this._setNotifyButtonContent(notifyButton, session.notifications_enabled, title);
         notifyButton.connect('clicked', () =>
@@ -378,6 +390,36 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
         content.add_child(footer);
         card.add_child(content);
         return card;
+    }
+
+    _setCopyButtonContent(button, copied) {
+        const label = copied ? 'Copied' : 'Copy resume';
+        button.accessible_name = copied ? 'Resume command copied' : 'Copy resume command';
+        const content = new St.BoxLayout({style_class: 'agent-notifier-button-content'});
+        content.add_child(new St.Icon({
+            icon_name: copied ? 'object-select-symbolic' : 'edit-copy-symbolic',
+            style_class: 'popup-menu-icon',
+        }));
+        content.add_child(new St.Label({text: label, y_align: Clutter.ActorAlign.CENTER}));
+        button.set_child(content);
+    }
+
+    _resumeCommand(session) {
+        const prefix = `${session.agent}:`;
+        const rawId = session.id.startsWith(prefix)
+            ? session.id.slice(prefix.length)
+            : session.id;
+        const id = this._shellArgument(rawId);
+        return session.agent === 'claude'
+            ? `claude --resume ${id}`
+            : `codex resume ${id}`;
+    }
+
+    _shellArgument(value) {
+        const text = String(value);
+        if (/^[A-Za-z0-9._:@+\/-]+$/.test(text))
+            return text;
+        return `'${text.replaceAll("'", "'\\''")}'`;
     }
 
     _setNotifyButtonContent(button, enabled, title) {

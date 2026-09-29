@@ -74,6 +74,41 @@ impl Store {
             tx.commit()?;
             return Ok(false);
         }
+        if e.starts_session {
+            let changed = if current.is_some() {
+                tx.execute(
+                    "UPDATE sessions SET hidden=0 WHERE id=?1 AND hidden=1",
+                    [&e.session.id],
+                )?
+            } else {
+                0
+            };
+            tx.execute(
+                "INSERT INTO events VALUES(?1,?2)",
+                params![e.event_id, Utc::now().timestamp()],
+            )?;
+            if changed > 0 {
+                bump_revision(&tx)?;
+            }
+            tx.commit()?;
+            return Ok(changed > 0);
+        }
+        if current.is_none() && !e.has_prompt {
+            tx.execute(
+                "INSERT INTO events VALUES(?1,?2)",
+                params![e.event_id, Utc::now().timestamp()],
+            )?;
+            tx.commit()?;
+            return Ok(false);
+        }
+        if current.is_some() && !e.session.live {
+            tx.execute(
+                "INSERT INTO events VALUES(?1,?2)",
+                params![e.event_id, Utc::now().timestamp()],
+            )?;
+            tx.commit()?;
+            return Ok(false);
+        }
         let s = &e.session;
         let notifications_enabled = tx
             .query_row(
@@ -84,7 +119,7 @@ impl Store {
             .optional()?
             .unwrap_or(0)
             != 0;
-        tx.execute("INSERT INTO sessions(id,agent,title,project,state,preview,created_at,updated_at,live,notifications_enabled,hidden) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11) ON CONFLICT(id) DO UPDATE SET title=excluded.title,project=excluded.project,state=excluded.state,preview=excluded.preview,updated_at=excluded.updated_at,live=1,hidden=CASE WHEN ?12 THEN 0 ELSE sessions.hidden END", params![s.id,s.agent.as_str(),s.title,s.project,s.state.as_str(),s.preview,s.created_at.timestamp(),s.updated_at.timestamp(),s.live,notifications_enabled,s.hidden,e.starts_session])?;
+        tx.execute("INSERT INTO sessions(id,agent,title,project,state,preview,created_at,updated_at,live,notifications_enabled,hidden) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11) ON CONFLICT(id) DO UPDATE SET title=excluded.title,project=excluded.project,state=excluded.state,preview=excluded.preview,updated_at=excluded.updated_at,live=1", params![s.id,s.agent.as_str(),s.title,s.project,s.state.as_str(),s.preview,s.created_at.timestamp(),s.updated_at.timestamp(),s.live,notifications_enabled,s.hidden])?;
         tx.execute(
             "INSERT INTO events VALUES(?1,?2)",
             params![e.event_id, Utc::now().timestamp()],
@@ -125,6 +160,22 @@ impl Store {
         self.conn
             .execute("DELETE FROM events WHERE received_at<?1", [cutoff])?;
         Ok(sessions)
+    }
+    pub fn purge_promptless_sessions(&mut self) -> anyhow::Result<usize> {
+        let tx = self.conn.transaction()?;
+        tx.execute(
+            "DELETE FROM events WHERE event_id IN (SELECT 'bootstrap:' || agent || ':' || substr(id, instr(id, ':') + 1) FROM sessions WHERE state='unknown' AND trim(preview)='')",
+            [],
+        )?;
+        let removed = tx.execute(
+            "DELETE FROM sessions WHERE state='unknown' AND trim(preview)=''",
+            [],
+        )?;
+        if removed > 0 {
+            bump_revision(&tx)?;
+        }
+        tx.commit()?;
+        Ok(removed)
     }
     pub fn revision(&self) -> anyhow::Result<u64> {
         Ok(self
@@ -250,7 +301,7 @@ mod tests {
         let now = Utc::now();
         let e = normalize(
             Agent::Codex,
-            r#"{"session_id":"1","hook_event_name":"Stop"}"#,
+            r#"{"session_id":"1","hook_event_name":"UserPromptSubmit","prompt":"first"}"#,
             now,
         )
         .unwrap();
@@ -275,12 +326,76 @@ mod tests {
     }
 
     #[test]
+    fn ignores_new_sessions_until_the_first_prompt() {
+        let d = tempfile::tempdir().unwrap();
+        let mut store = Store::open(&d.path().join("a.db")).unwrap();
+        let now = Utc::now();
+
+        let start = normalize(
+            Agent::Codex,
+            r#"{"session_id":"1","hook_event_name":"SessionStart"}"#,
+            now,
+        )
+        .unwrap();
+        assert!(!store.ingest(&start).unwrap());
+        assert!(store.list(0).unwrap().is_empty());
+
+        let stop = normalize(
+            Agent::Codex,
+            r#"{"session_id":"1","hook_event_name":"Stop"}"#,
+            now + Duration::seconds(1),
+        )
+        .unwrap();
+        assert!(!store.ingest(&stop).unwrap());
+        assert!(store.list(0).unwrap().is_empty());
+
+        let prompt = normalize(
+            Agent::Codex,
+            r#"{"session_id":"1","hook_event_name":"UserPromptSubmit","prompt":"hello"}"#,
+            now + Duration::seconds(2),
+        )
+        .unwrap();
+        assert!(store.ingest(&prompt).unwrap());
+        assert_eq!(store.list(0).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn purges_existing_promptless_unknown_sessions() {
+        let d = tempfile::tempdir().unwrap();
+        let mut store = Store::open(&d.path().join("a.db")).unwrap();
+        store.conn.execute(
+            "INSERT INTO sessions VALUES('codex:junk','codex','Imported session','','unknown','',0,?1,0,0,0)",
+            [Utc::now().timestamp()],
+        ).unwrap();
+        store
+            .conn
+            .execute(
+                "INSERT INTO events VALUES('bootstrap:codex:junk',?1)",
+                [Utc::now().timestamp()],
+            )
+            .unwrap();
+
+        assert_eq!(store.purge_promptless_sessions().unwrap(), 1);
+        assert!(store.list(0).unwrap().is_empty());
+        assert!(store
+            .conn
+            .query_row(
+                "SELECT 1 FROM events WHERE event_id='bootstrap:codex:junk'",
+                [],
+                |_| Ok(()),
+            )
+            .optional()
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
     fn global_notification_setting_applies_to_existing_and_new_sessions() {
         let d = tempfile::tempdir().unwrap();
         let mut store = Store::open(&d.path().join("a.db")).unwrap();
         let first = normalize(
             Agent::Codex,
-            r#"{"session_id":"1","hook_event_name":"Stop"}"#,
+            r#"{"session_id":"1","hook_event_name":"UserPromptSubmit","prompt":"first"}"#,
             Utc::now(),
         )
         .unwrap();
@@ -294,7 +409,7 @@ mod tests {
 
         let second = normalize(
             Agent::Codex,
-            r#"{"session_id":"2","hook_event_name":"Stop"}"#,
+            r#"{"session_id":"2","hook_event_name":"UserPromptSubmit","prompt":"second"}"#,
             Utc::now(),
         )
         .unwrap();
@@ -315,7 +430,7 @@ mod tests {
 
         let initial = normalize(
             Agent::Codex,
-            r#"{"session_id":"1","hook_event_name":"Stop"}"#,
+            r#"{"session_id":"1","hook_event_name":"UserPromptSubmit","prompt":"first"}"#,
             now,
         )
         .unwrap();

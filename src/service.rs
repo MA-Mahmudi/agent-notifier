@@ -13,6 +13,7 @@ pub struct Service {
 }
 impl Service {
     pub fn new(mut store: Store) -> Self {
+        let _ = store.purge_promptless_sessions();
         let _ = bootstrap::import_recent(&mut store);
         Self {
             store: Mutex::new(store),
