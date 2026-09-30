@@ -1,7 +1,6 @@
 // agent-notifier.opencode
 // OpenCode V2 server plugin for Agent Notifier.
 import { spawn } from 'node:child_process';
-import { Plugin } from '@opencode/plugin';
 
 const AGENT_NOTIFIER = "__AGENT_NOTIFIER_BINARY__";
 
@@ -141,7 +140,7 @@ function forward(payload) {
     }
 }
 
-export default Plugin.define({
+export default {
     id: 'agent-notifier.opencode',
     async setup(ctx) {
         const promptRegistration = await ctx.session.hook('prompt', (event) => {
@@ -177,4 +176,4 @@ export default Plugin.define({
             await promptRegistration.dispose();
         };
     },
-});
+};
