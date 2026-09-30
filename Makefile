@@ -7,6 +7,7 @@ check:
 	cargo clippy --all-targets -- -D warnings
 	glib-compile-schemas --strict --dry-run extension/schemas
 	sh -n scripts/install-user.sh scripts/install-release-user.sh scripts/build-release-packages.sh
+	node --check opencode/agent-notifier.js
 test-hyprland:
 	cargo build --locked
 	dbus-run-session -- python3 tests/hyprland.py "$(or $(CARGO_TARGET_DIR),target)/debug/agent-notifier"

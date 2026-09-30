@@ -6,6 +6,7 @@ Every release must have a dated entry here. The release workflow publishes the m
 
 ### Changed
 
+- Add OpenCode V2 monitoring through a global event-stream plugin, including setup, uninstall, state tracking, and resume commands.
 - Use the GNOME Extensions schema namespace and disclose clipboard behavior and the separately installed companion in the extension description.
 - Package a clean GNOME extension ZIP with the license and schema XML, excluding compiled schemas and unrelated files.
 - Add automated checks for GNOME store archive structure and metadata.

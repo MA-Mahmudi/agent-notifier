@@ -417,9 +417,11 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
             ? session.id.slice(prefix.length)
             : session.id;
         const id = this._shellArgument(rawId);
-        return session.agent === 'claude'
-            ? `claude --resume ${id}`
-            : `codex resume ${id}`;
+        if (session.agent === 'claude')
+            return `claude --resume ${id}`;
+        if (session.agent === 'opencode')
+            return `opencode --session ${id}`;
+        return `codex resume ${id}`;
     }
 
     _shellArgument(value) {

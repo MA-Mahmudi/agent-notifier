@@ -3,7 +3,7 @@
 Name:           agent-notifier
 Version:        %{package_version}
 Release:        1%{?dist}
-Summary:        Local Codex and Claude Code session monitor
+Summary:        Local Codex, Claude Code, and OpenCode session monitor
 License:        GPL-3.0-or-later
 URL:            https://github.com/MrMohebi/agent-notifier
 Source0:        agent-notifier-%{version}.tar.gz

@@ -277,6 +277,7 @@ fn resume_command(session: &Session) -> String {
     match session.agent {
         crate::model::Agent::Codex => format!("codex resume {quoted}"),
         crate::model::Agent::Claude => format!("claude --resume {quoted}"),
+        crate::model::Agent::OpenCode => format!("opencode --session {quoted}"),
     }
 }
 
@@ -466,5 +467,8 @@ mod tests {
         item.agent = Agent::Claude;
         item.id = "claude:example".into();
         assert_eq!(resume_command(&item), "claude --resume 'example'");
+        item.agent = Agent::OpenCode;
+        item.id = "opencode:example".into();
+        assert_eq!(resume_command(&item), "opencode --session 'example'");
     }
 }

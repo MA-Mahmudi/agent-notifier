@@ -190,6 +190,9 @@ class HyprlandIntegration(unittest.TestCase):
             self.assertTrue((install_home / "config/systemd/user/agent-notifier.service").is_file())
             self.assertTrue((install_home / ".codex/hooks.json").is_file())
             self.assertTrue((install_home / ".claude/settings.json").is_file())
+            opencode_plugin = install_home / "config/opencode/plugins/agent-notifier.js"
+            self.assertTrue(opencode_plugin.is_file())
+            self.assertNotIn("__AGENT_NOTIFIER_BINARY__", opencode_plugin.read_text())
             self.assertFalse((install_home / "data/gnome-shell").exists())
 
 

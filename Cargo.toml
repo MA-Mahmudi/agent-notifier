@@ -4,7 +4,7 @@ version = "0.1.5"
 edition = "2021"
 rust-version = "1.88"
 license = "GPL-3.0-or-later"
-description = "Local Codex and Claude Code session monitor"
+description = "Local Codex, Claude Code, and OpenCode session monitor"
 
 [[bin]]
 name = "agent-notifier"

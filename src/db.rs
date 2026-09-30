@@ -273,11 +273,7 @@ fn from_ts(v: i64) -> DateTime<Utc> {
     DateTime::from_timestamp(v, 0).unwrap_or(DateTime::UNIX_EPOCH)
 }
 fn parse_agent(s: String) -> Agent {
-    if s == "claude" {
-        Agent::Claude
-    } else {
-        Agent::Codex
-    }
+    Agent::parse(&s).unwrap_or(Agent::Codex)
 }
 fn parse_state(s: String) -> State {
     match s.as_str() {

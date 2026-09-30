@@ -14,7 +14,7 @@ use std::path::PathBuf;
 #[command(
     name = "agent-notifier",
     version,
-    about = "Monitor local Codex and Claude Code sessions"
+    about = "Monitor local Codex, Claude Code, and OpenCode sessions"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -38,7 +38,7 @@ enum Command {
         history_hours: u32,
     },
     Hook {
-        #[arg(value_parser=["codex","claude"])]
+        #[arg(value_parser=["codex","claude","opencode"])]
         source: String,
     },
     Setup {

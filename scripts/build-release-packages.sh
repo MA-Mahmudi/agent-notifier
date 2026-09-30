@@ -51,7 +51,7 @@ Architecture: amd64
 Installed-Size: $installed_size
 Maintainer: Mohammad Mohebi <mmmohebi@users.noreply.github.com>
 Depends: systemd, dbus-user-session
-Description: Local Codex and Claude Code session monitor
+Description: Local Codex, Claude Code, and OpenCode session monitor
  Rust companion service with GNOME Shell and Hyprland/Waybar integrations.
 EOF
 install -m755 "$binary" "$deb_root/usr/libexec/agent-notifier"

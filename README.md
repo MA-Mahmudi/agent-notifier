@@ -5,13 +5,13 @@
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](LICENSE)
 [![GNOME Shell 45–49](https://img.shields.io/badge/GNOME%20Shell-45--49-4a86cf.svg)](extension/metadata.json)
 
-Agent Notifier monitors Codex and Claude Code sessions on GNOME Shell and Hyprland with Waybar, using a shared local Rust companion. It keeps active sessions visible in the bar, shows recent activity, and can send completion, attention, and failure alerts to ntfy or authenticated webhooks.
+Agent Notifier monitors Codex, Claude Code, and OpenCode sessions on GNOME Shell and Hyprland with Waybar, using a shared local Rust companion. It keeps active sessions visible in the bar, shows recent activity, and can send completion, attention, and failure alerts to ntfy or authenticated webhooks.
 
 ![Animated preview of Agent Notifier showing working, attention, and completed session states](assets/agent-notifier-preview.gif)
 
 ## Features
 
-- Live Codex and Claude Code session chips in the GNOME top bar.
+- Live Codex, Claude Code, and OpenCode session chips in the GNOME top bar.
 - Hyprland/Waybar status chips and tooltips, with a wofi or rofi session menu.
 - Blinking blue working status, red attention/failure status, and temporary green completion status.
 - Compact cards with project, title, response/question preview, state, and relative time.
@@ -21,7 +21,7 @@ Agent Notifier monitors Codex and Claude Code sessions on GNOME Shell and Hyprla
 - Optional ntfy and generic bearer-authenticated webhook destinations.
 - Libadwaita preferences for destinations, tests, service health, and display windows.
 - Secret Service storage for bearer tokens; secrets never enter GNOME Shell or the config file.
-- Additive, backed-up, idempotent Codex and Claude Code hook installation.
+- Additive, backed-up, idempotent Codex and Claude Code hook installation, plus an OpenCode V2 plugin.
 - Local SQLite history with redacted previews and a rolling 24-hour retention window.
 - Atomic disk spooling when the session D-Bus is temporarily unavailable.
 
@@ -30,7 +30,7 @@ Agent Notifier is informational only. It can copy a safe CLI resume command, but
 ## How it works
 
 ```text
-Codex / Claude hooks
+Codex / Claude hooks and OpenCode V2 plugin
         │ JSON events
         ▼
 Rust companion ─── SQLite session history
@@ -45,13 +45,15 @@ GNOME extension / Hyprland Waybar module
 
 The desktop integrations are deliberately lightweight. File parsing, persistence, credentials, and network traffic remain in the companion service.
 
+OpenCode support uses its V2 plugin event stream and is live-only: OpenCode does not replay missed events to plugin subscribers, and Agent Notifier does not inspect OpenCode's private database format.
+
 ## Requirements
 
 - Linux with GNOME Shell 45–49, or Hyprland with Waybar.
 - On Hyprland: `wofi` or a Wayland-compatible `rofi` for the session menu, and `wl-clipboard` for **Copy resume**.
 - A systemd user session and session D-Bus.
 - GNOME Keyring or another Secret Service provider for authenticated destinations.
-- Codex CLI and/or Claude Code with local hook support.
+- Codex CLI and/or Claude Code with local hook support, and/or OpenCode V2 with local plugin support.
 - For source builds: Rust 1.88 or newer and a C toolchain. GNOME extension builds also need `glib-compile-schemas` and `zip`.
 
 The GNOME extension targets GNOME Shell 45–49. GNOME Shell 46 is the primary development environment; reports and compatibility fixes for the other declared versions are welcome. See [Hyprland with Waybar](#hyprland-with-waybar) for Hyprland installation and configuration.
@@ -74,7 +76,7 @@ cd agent-notifier-*-linux-x86_64
 ./install.sh
 ```
 
-The installer places everything under `~/.local`, starts the user service, and installs the Codex and Claude hooks. Log out and back in once, then enable the extension:
+The installer places everything under `~/.local`, starts the user service, and installs the Codex, Claude, and OpenCode integrations. Log out and back in once, then enable the extension:
 
 ```sh
 gnome-extensions enable agent-notifier@mmmohebi.github.io
@@ -134,9 +136,9 @@ The source installer:
 2. Installs D-Bus activation and the systemd user service.
 3. Installs the Waybar integration files and, when installing for GNOME, copies and compiles the Shell extension.
 4. Starts the companion service.
-5. Adds Agent Notifier hooks without replacing unrelated settings.
+5. Adds Agent Notifier hooks and the global OpenCode plugin without replacing unrelated settings.
 
-Existing Codex and Claude settings receive timestamped backups before they are changed.
+Existing Codex and Claude settings receive timestamped backups before they are changed. The OpenCode plugin is installed globally at `$XDG_CONFIG_HOME/opencode/plugins/agent-notifier.js` and does not modify `opencode.json(c)`.
 
 ### Hyprland with Waybar
 
@@ -191,9 +193,9 @@ For Hyprland, use the click menu described above. On GNOME:
 2. Use **Enable all** to alert for every current and future session, or use **Notify on** for selected sessions.
 3. Open the gear button to configure an ntfy or webhook destination.
 4. Save the destination, then use **Send test**.
-5. Start a new Codex or Claude Code turn and watch its state update.
+5. Start a new Codex, Claude Code, or OpenCode turn and watch its state update.
 
-Use **Copy resume** on a session card to copy `codex resume SESSION_ID` or `claude --resume SESSION_ID` without closing the popup.
+Use **Copy resume** on a session card to copy `codex resume SESSION_ID`, `claude --resume SESSION_ID`, or `opencode --session SESSION_ID` without closing the popup.
 
 Notifications are disabled by default. Enabling or disabling all sessions becomes the persistent default for sessions created after the next boot as well. An individual session can still override that default.
 
@@ -207,7 +209,7 @@ Hidden sessions remain in the local database. Open **Hidden (N)** and select **R
 | `working` | A prompt was submitted or background work remains | Blinking blue dot | No |
 | `needs_attention` | Input, permission, or another response is required | Red dot | Yes |
 | `completed` | The turn produced its final response | Green dot for 10 minutes by default | Yes |
-| `failed` | Claude `StopFailure` or an explicit failure was received | Red dot temporarily | Yes |
+| `failed` | An explicit failure was received | Red dot temporarily | Yes |
 | `ended` | The session was interrupted or terminated | Popup only | No |
 
 The recent-session window defaults to 24 hours. The green completion duration defaults to 10 minutes. Both are configurable in Preferences.
@@ -280,7 +282,7 @@ Destinations deliver independently. HTTP 429 and 5xx responses use bounded expon
 agent-notifier daemon
 agent-notifier waybar [--history-hours 1..24] [--completed-minutes 0..1440]
 agent-notifier menu [--launcher wofi|rofi] [--history-hours 1..24]
-agent-notifier hook codex|claude
+agent-notifier hook codex|claude|opencode
 agent-notifier setup [--apply] [--binary PATH]
 agent-notifier uninstall [--binary PATH]
 agent-notifier configure NAME --kind ntfy|webhook --endpoint URL [options]
@@ -358,7 +360,7 @@ agent-notifier setup
 agent-notifier setup --apply
 ```
 
-Review the generated entries in `~/.codex/hooks.json` and `~/.claude/settings.json`. Codex may require explicit trust for newly added local hooks.
+Review the generated entries in `~/.codex/hooks.json` and `~/.claude/settings.json`. OpenCode loads the plugin from `$XDG_CONFIG_HOME/opencode/plugins/agent-notifier.js`; restart its service with `opencode service restart` if the plugin is not picked up. Codex may require explicit trust for newly added local hooks.
 
 ### Notifications do not arrive
 

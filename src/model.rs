@@ -10,6 +10,8 @@ use std::path::Path;
 pub enum Agent {
     Codex,
     Claude,
+    #[serde(rename = "opencode")]
+    OpenCode,
 }
 
 impl Agent {
@@ -17,6 +19,7 @@ impl Agent {
         match s.to_ascii_lowercase().as_str() {
             "codex" => Some(Self::Codex),
             "claude" => Some(Self::Claude),
+            "opencode" | "open_code" => Some(Self::OpenCode),
             _ => None,
         }
     }
@@ -24,6 +27,7 @@ impl Agent {
         match self {
             Self::Codex => "codex",
             Self::Claude => "claude",
+            Self::OpenCode => "opencode",
         }
     }
 }
@@ -109,7 +113,7 @@ pub fn normalize(
     let event = first_str(&v, &["hook_event_name", "event", "type"]).unwrap_or("unknown");
     let id = first_str(&v, &["session_id", "sessionId", "conversation_id"])
         .ok_or_else(|| anyhow::anyhow!("hook payload has no session id"))?;
-    let cwd = first_str(&v, &["cwd", "project_dir"]).unwrap_or("");
+    let cwd = first_str(&v, &["cwd", "project_dir", "directory"]).unwrap_or("");
     let project = Path::new(cwd)
         .file_name()
         .and_then(|x| x.to_str())
@@ -129,11 +133,12 @@ pub fn normalize(
     let state = match event.to_ascii_lowercase().as_str() {
         "sessionstart" => State::Unknown,
         "userpromptsubmit" => State::Working,
+        "working" | "sessionbusy" => State::Working,
         "posttooluse" | "posttoolusefailure" => State::Working,
         "permissionrequest" | "notification" => State::NeedsAttention,
-        "stopfailure" => State::Failed,
+        "stopfailure" | "sessionerror" => State::Failed,
         "interrupt" | "sessionend" => State::Ended,
-        "stop" => {
+        "stop" | "sessionidle" => {
             if v.get("background_work")
                 .and_then(Value::as_bool)
                 .unwrap_or(false)
@@ -218,5 +223,23 @@ mod tests {
             let normalized = normalize(Agent::Claude, &payload, Utc::now()).unwrap();
             assert_eq!(normalized.session.state, State::Working);
         }
+    }
+
+    #[test]
+    fn normalizes_opencode_events() {
+        let event = normalize(
+            Agent::OpenCode,
+            r#"{"session_id":"ses_123","hook_event_name":"SessionIdle","directory":"/tmp/project","title":"Fix tests","message":"All tests passed"}"#,
+            Utc::now(),
+        )
+        .unwrap();
+        assert_eq!(event.session.id, "opencode:ses_123");
+        assert_eq!(event.session.project, "project");
+        assert_eq!(event.session.title, "Fix tests");
+        assert_eq!(event.session.state, State::Completed);
+        assert_eq!(
+            serde_json::to_value(&event.session).unwrap()["agent"],
+            "opencode"
+        );
     }
 }
