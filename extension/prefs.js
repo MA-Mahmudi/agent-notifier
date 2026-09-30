@@ -9,6 +9,11 @@ const Proxy = Gio.DBusProxy.makeProxyWrapper(IFACE);
 
 export default class Preferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
+        this._closed = false;
+        window.connect('close-request', () => {
+            this._cleanup();
+            return false;
+        });
         window.set_default_size(680, 720);
         this._settings = this.getSettings();
 
@@ -24,6 +29,24 @@ export default class Preferences extends ExtensionPreferences {
         this._buildDestinationList(page);
         this._buildEditor(page);
         this._connectCompanion();
+    }
+
+    _cleanup() {
+        this._closed = true;
+        this._token.text = '';
+        this._proxy = null;
+        this._settings = null;
+        this._healthRow = null;
+        this._healthIcon = null;
+        this._destinationGroup = null;
+        this._destinationRows = [];
+        this._notificationsEnabled = null;
+        this._name = null;
+        this._kind = null;
+        this._endpoint = null;
+        this._topic = null;
+        this._token = null;
+        this._enabled = null;
     }
 
     _buildHealthGroup(page) {
@@ -164,6 +187,8 @@ export default class Preferences extends ExtensionPreferences {
                 'io.github.mmmohebi.AgentNotifier',
                 '/io/github/mmmohebi/AgentNotifier',
                 (_proxy, error) => {
+                    if (this._closed)
+                        return;
                     if (error) {
                         this._showDisconnected(error.message);
                         return;
@@ -177,10 +202,12 @@ export default class Preferences extends ExtensionPreferences {
     }
 
     _loadStatus(message = '') {
-        if (!this._proxy)
+        if (this._closed || !this._proxy)
             return;
 
         this._proxy.GetServiceStatusRemote((result, error) => {
+            if (this._closed)
+                return;
             if (error) {
                 this._showDisconnected(error.message);
                 return;
@@ -316,6 +343,8 @@ export default class Preferences extends ExtensionPreferences {
             this._enabled.active,
             this._token.text,
             (result, error) => {
+                if (this._closed)
+                    return;
                 const response = this._response(result, error);
                 if (!response.ok) {
                     this._healthRow.subtitle = `Could not save: ${response.error}`;
@@ -336,6 +365,8 @@ export default class Preferences extends ExtensionPreferences {
             enabled,
             '',
             (result, error) => {
+                if (this._closed)
+                    return;
                 const response = this._response(result, error);
                 this._loadStatus(response.ok
                     ? `${enabled ? 'Enabled' : 'Disabled'} “${destination.name}”`
@@ -348,6 +379,8 @@ export default class Preferences extends ExtensionPreferences {
         if (!this._proxy)
             return;
         this._proxy.SetAllSessionNotificationsRemote(enabled, (result, error) => {
+            if (this._closed)
+                return;
             const response = this._response(result, error);
             if (response.ok) {
                 this._healthRow.subtitle = enabled
@@ -368,6 +401,8 @@ export default class Preferences extends ExtensionPreferences {
 
         this._healthRow.subtitle = `Sending a test to “${name}”…`;
         this._proxy.TestDestinationRemote(name.trim(), (result, error) => {
+            if (this._closed)
+                return;
             const response = this._response(result, error);
             this._healthRow.subtitle = response.ok
                 ? `Test delivered to “${name}”`
@@ -377,6 +412,8 @@ export default class Preferences extends ExtensionPreferences {
 
     _removeDestination(name) {
         this._proxy?.RemoveDestinationRemote(name, (result, error) => {
+            if (this._closed)
+                return;
             const response = this._response(result, error);
             this._loadStatus(response.ok
                 ? `Removed destination “${name}”`

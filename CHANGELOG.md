@@ -2,6 +2,19 @@
 
 Every release must have a dated entry here. The release workflow publishes the matching entry as its GitHub release notes and rejects missing entries or version mismatches.
 
+## [0.1.5] - 2026-09-30
+
+### Changed
+
+- Use the GNOME Extensions schema namespace and disclose clipboard behavior and the separately installed companion in the extension description.
+- Package a clean GNOME extension ZIP with the license and schema XML, excluding compiled schemas and unrelated files.
+- Add automated checks for GNOME store archive structure and metadata.
+- Clean up menu signals and preferences references, ignore late D-Bus callbacks after closing, and suppress repeated service-error logs.
+
+### Upgrade notes
+
+- The GNOME display settings now use `/org/gnome/shell/extensions/agent-notifier/`. Existing values under the old path can be copied using the migration commands in the README.
+
 ## [0.1.4] - 2026-09-30
 
 ### Added

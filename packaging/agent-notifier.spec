@@ -1,4 +1,4 @@
-%global package_version %{?package_version}%{!?package_version:0.1.4}
+%global package_version %{?package_version}%{!?package_version:0.1.5}
 
 Name:           agent-notifier
 Version:        %{package_version}
@@ -40,6 +40,9 @@ install -Dm644 LICENSE %{buildroot}%{_licensedir}/agent-notifier/LICENSE
 %license %{_licensedir}/agent-notifier/LICENSE
 
 %changelog
+* Wed Sep 30 2026 Mohammad Mohebi <mmmohebi@users.noreply.github.com> - 0.1.5-1
+- Prepare GNOME extension packaging and metadata for store submission
+
 * Wed Sep 30 2026 Mohammad Mohebi <mmmohebi@users.noreply.github.com> - 0.1.4-1
 - Add Hyprland/Waybar support and required changelog release notes
 

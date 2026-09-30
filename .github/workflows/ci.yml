@@ -52,4 +52,4 @@ jobs:
         run: cargo build --release --locked && ./scripts/package-extension.sh
 
       - name: Verify extension archive
-        run: unzip -t dist/agent-notifier@mmmohebi.github.io.zip
+        run: unzip -t dist/agent-notifier@mmmohebi.github.io.zip && python3 tests/extension-package.py dist/agent-notifier@mmmohebi.github.io.zip

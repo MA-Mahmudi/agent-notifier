@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-  <schema id="io.github.mmmohebi.AgentNotifier" path="/io/github/mmmohebi/AgentNotifier/">
+  <schema id="org.gnome.shell.extensions.agent-notifier" path="/org/gnome/shell/extensions/agent-notifier/">
     <key name="refresh-seconds" type="u">
       <range min="10" max="300"/>
       <default>30</default>

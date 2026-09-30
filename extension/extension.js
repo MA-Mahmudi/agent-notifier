@@ -42,6 +42,8 @@ class ScrollableSessionSection extends PopupMenu.PopupMenuSection {
 const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button {
     _init(extension) {
         super._init(0.0, 'Agent Notifier');
+        this._destroyed = false;
+        this._lastError = null;
         this._extension = extension;
         this._settings = extension.getSettings();
         this._settingsChanged = this._settings.connect('changed', () => this._refresh());
@@ -57,8 +59,10 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
             'io.github.mmmohebi.AgentNotifier',
             '/io/github/mmmohebi/AgentNotifier',
             (proxy, error) => {
+                if (this._destroyed)
+                    return;
                 if (error) {
-                    console.error(`Agent Notifier: ${error.message}`);
+                    this._logError(error.message);
                     this._showUnavailable();
                     return;
                 }
@@ -68,7 +72,7 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
             }
         );
 
-        this.menu.connect('open-state-changed', (_menu, open) => {
+        this._menuSignal = this.menu.connect('open-state-changed', (_menu, open) => {
             if (open)
                 this._refresh();
         });
@@ -112,14 +116,16 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
     }
 
     _refresh() {
-        if (!this._proxy)
+        if (this._destroyed || !this._proxy)
             return;
 
         const historySeconds = this._settings.get_uint('history-hours') * 60 * 60;
         const since = Math.floor(Date.now() / 1000) - historySeconds;
         this._proxy.ListSessionsRemote(since, (result, error) => {
+            if (this._destroyed)
+                return;
             if (error) {
-                console.error(`Agent Notifier: ${error.message}`);
+                this._logError(error.message);
                 this._showUnavailable();
                 return;
             }
@@ -128,7 +134,7 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
             try {
                 sessions = JSON.parse(result[0]);
             } catch (parseError) {
-                console.error(`Agent Notifier: invalid service response: ${parseError.message}`);
+                this._logError(`Invalid service response: ${parseError.message}`);
                 this._showUnavailable();
                 return;
             }
@@ -138,6 +144,7 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
                 return;
             }
 
+            this._lastError = null;
             this._renderPanel(sessions);
             this._renderMenu(sessions);
         });
@@ -442,9 +449,11 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
         const enabled = !session.notifications_enabled;
         button.reactive = false;
         this._proxy.SetSessionNotificationsRemote(session.id, enabled, (result, error) => {
+            if (this._destroyed)
+                return;
             button.reactive = true;
             if (error) {
-                console.error(`Agent Notifier: ${error.message}`);
+                this._logError(error.message);
                 return;
             }
 
@@ -452,7 +461,7 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
                 if (JSON.parse(result[0]).ok !== true)
                     return;
             } catch (parseError) {
-                console.error(`Agent Notifier: invalid notification response: ${parseError.message}`);
+                this._logError(`Invalid notification response: ${parseError.message}`);
                 return;
             }
 
@@ -464,6 +473,8 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
     _setAllNotifications(enabled, button) {
         button.reactive = false;
         this._proxy.SetAllSessionNotificationsRemote(enabled, (result, error) => {
+            if (this._destroyed)
+                return;
             button.reactive = true;
             if (!this._responseOk(result, error, 'bulk notification update'))
                 return;
@@ -474,6 +485,8 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
     _setSessionHidden(session, hidden, button) {
         button.reactive = false;
         this._proxy.SetSessionHiddenRemote(session.id, hidden, (result, error) => {
+            if (this._destroyed)
+                return;
             button.reactive = true;
             if (!this._responseOk(result, error, 'session visibility update'))
                 return;
@@ -484,19 +497,26 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
 
     _responseOk(result, error, action) {
         if (error) {
-            console.error(`Agent Notifier ${action}: ${error.message}`);
+            this._logError(`${action}: ${error.message}`);
             return false;
         }
         try {
             return JSON.parse(result[0]).ok === true;
         } catch (parseError) {
-            console.error(`Agent Notifier ${action}: ${parseError.message}`);
+            this._logError(`${action}: ${parseError.message}`);
             return false;
         }
     }
 
     _state(value) {
         return STATE_META[value] || STATE_META.unknown;
+    }
+
+    _logError(message) {
+        if (this._lastError === message)
+            return;
+        this._lastError = message;
+        console.error(`Agent Notifier: ${message}`);
     }
 
     _shorten(value, maxLength) {
@@ -521,6 +541,9 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
     }
 
     destroy() {
+        this._destroyed = true;
+        if (this._menuSignal)
+            this.menu.disconnect(this._menuSignal);
         if (this._signal && this._proxy)
             this._proxy.disconnectSignal(this._signal);
         if (this._refreshTimer)
@@ -529,6 +552,16 @@ const Indicator = GObject.registerClass(class Indicator extends PanelMenu.Button
             GLib.source_remove(this._blinkTimer);
         if (this._settingsChanged)
             this._settings.disconnect(this._settingsChanged);
+        this._menuSignal = 0;
+        this._signal = 0;
+        this._refreshTimer = 0;
+        this._blinkTimer = 0;
+        this._settingsChanged = 0;
+        this._proxy = null;
+        this._settings = null;
+        this._workingDots = [];
+        this._lastError = null;
+        this._extension = null;
         super.destroy();
     }
 });

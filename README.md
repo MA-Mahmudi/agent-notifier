@@ -82,6 +82,14 @@ gnome-extensions enable agent-notifier@mmmohebi.github.io
 
 GNOME Shell on Wayland cannot reload changed extension JavaScript without a logout/login cycle.
 
+The GNOME extension requires the companion and hooks installed separately, including when installed from extensions.gnome.org.
+
+When upgrading from 0.1.4 or earlier, GNOME display preferences use a new schema path. If you customized them, close Preferences and copy the existing values before opening the updated extension:
+
+```sh
+dconf dump /io/github/mmmohebi/AgentNotifier/ | dconf load /org/gnome/shell/extensions/agent-notifier/
+```
+
 ### Debian or Ubuntu package
 
 Download the `.deb` and `agent-notifier-shell-extension-VERSION.zip` from the same release:
@@ -401,7 +409,7 @@ Run a complete local package build on Debian/Ubuntu with `dpkg-deb` and `rpmbuil
 
 ```sh
 cargo build --release --locked
-./scripts/build-release-packages.sh 0.1.4
+./scripts/build-release-packages.sh 0.1.5
 ```
 
 ## CI and releases
@@ -422,15 +430,15 @@ To release:
 Update `Cargo.toml`, `Cargo.lock`, the RPM fallback version, and the GNOME extension version. Add a dated entry for the package version to [CHANGELOG.md](CHANGELOG.md), then run the checks. The release workflow requires that entry and publishes it as the GitHub release notes; releases without an entry or with a mismatched package version fail before building.
 
 ```sh
-git tag -s v0.1.4 -m 'Agent Notifier 0.1.4'
-git push origin v0.1.4
+git tag -s v0.1.5 -m 'Agent Notifier 0.1.5'
+git push origin v0.1.5
 ```
 
 Verify downloaded artifacts:
 
 ```sh
 sha256sum -c SHA256SUMS
-gh attestation verify agent-notifier-0.1.4-linux-x86_64.tar.gz \
+gh attestation verify agent-notifier-0.1.5-linux-x86_64.tar.gz \
   --repo MrMohebi/agent-notifier
 ```
 

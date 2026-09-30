@@ -1,9 +1,9 @@
 {
   "uuid": "agent-notifier@mmmohebi.github.io",
   "name": "Agent Notifier",
-  "description": "Shows local Codex and Claude Code session activity",
+  "description": "Monitor local Codex and Claude Code sessions in the top bar, with activity previews, notification controls, and hide/restore actions.\n\nRequires the separately installed Agent Notifier companion service and CLI hooks. Installation instructions: https://github.com/MrMohebi/agent-notifier#install\n\nClipboard access: writes a resume command to the clipboard only when you click Copy resume. It does not read clipboard contents or execute the command.",
   "shell-version": ["45", "46", "47", "48", "49"],
-  "settings-schema": "io.github.mmmohebi.AgentNotifier",
+  "settings-schema": "org.gnome.shell.extensions.agent-notifier",
   "url": "https://github.com/MrMohebi/agent-notifier",
-  "version": 7
+  "version": 8
 }

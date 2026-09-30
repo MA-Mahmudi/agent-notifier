@@ -62,6 +62,9 @@ jobs:
       - name: Build release packages
         run: ./scripts/build-release-packages.sh "${{ steps.version.outputs.value }}"
 
+      - name: Verify GNOME store archive
+        run: python3 tests/extension-package.py dist/agent-notifier@mmmohebi.github.io.zip
+
       - name: Generate checksums
         working-directory: dist
         run: sha256sum agent-notifier-* agent-notifier_* > SHA256SUMS
