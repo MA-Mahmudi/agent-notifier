@@ -1,0 +1,13 @@
+{
+    "custom/agent-notifier": {
+        "exec": "agent-notifier waybar",
+        "return-type": "json",
+        "interval": 5,
+        "format": "{text}",
+        "escape": false,
+        "tooltip": true,
+        "on-click": "agent-notifier menu",
+        "on-click-right": "agent-notifier menu",
+        "exec-on-event": true
+    }
+}

@@ -5,5 +5,5 @@
   "shell-version": ["45", "46", "47", "48", "49"],
   "settings-schema": "io.github.mmmohebi.AgentNotifier",
   "url": "https://github.com/MrMohebi/agent-notifier",
-  "version": 6
+  "version": 7
 }

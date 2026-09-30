@@ -36,6 +36,11 @@ jobs:
           fi
           echo "value=$version" >> "$GITHUB_OUTPUT"
 
+      - name: Require versioned changelog and prepare release notes
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.value }}
+        run: python3 scripts/release-notes.py "$RELEASE_VERSION" > release-notes.md
+
       - name: Install packaging tools
         run: sudo apt-get update && sudo apt-get install --yes glib2.0-bin rpm zip
 
@@ -47,6 +52,9 @@ jobs:
 
       - name: Test
         run: make check && cargo test --locked && node --check extension/extension.js && node --check extension/prefs.js
+
+      - name: Test Hyprland integration on a private D-Bus
+        run: make test-hyprland
 
       - name: Build
         run: cargo build --release --locked
@@ -73,6 +81,8 @@ jobs:
         shell: bash
         run: |
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release create "$RELEASE_TAG" --generate-notes --title "Agent Notifier $RELEASE_TAG"
+            gh release create "$RELEASE_TAG" --verify-tag --notes-file release-notes.md --title "Agent Notifier $RELEASE_TAG"
+          else
+            gh release edit "$RELEASE_TAG" --notes-file release-notes.md
           fi
           gh release upload "$RELEASE_TAG" dist/agent-notifier-* dist/agent-notifier_* dist/SHA256SUMS --clobber

@@ -2,6 +2,7 @@ mod bootstrap;
 mod config;
 mod db;
 mod hook;
+mod hyprland;
 mod model;
 mod notify;
 mod service;
@@ -22,6 +23,20 @@ struct Cli {
 #[derive(Subcommand)]
 enum Command {
     Daemon,
+    /// Print one JSON status update for a Waybar custom module.
+    Waybar {
+        #[arg(long, default_value_t = 24, value_parser = clap::value_parser!(u32).range(1..=24))]
+        history_hours: u32,
+        #[arg(long, default_value_t = 10, value_parser = clap::value_parser!(u32).range(0..=1440))]
+        completed_minutes: u32,
+    },
+    /// Open the Hyprland session menu using wofi or rofi.
+    Menu {
+        #[arg(long, value_enum)]
+        launcher: Option<hyprland::Launcher>,
+        #[arg(long, default_value_t = 24, value_parser = clap::value_parser!(u32).range(1..=24))]
+        history_hours: u32,
+    },
     Hook {
         #[arg(value_parser=["codex","claude"])]
         source: String,
@@ -62,6 +77,19 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
         Command::Daemon => service::run().await?,
+        Command::Waybar {
+            history_hours,
+            completed_minutes,
+        } => {
+            tokio::task::spawn_blocking(move || hyprland::waybar(history_hours, completed_minutes))
+                .await??;
+        }
+        Command::Menu {
+            launcher,
+            history_hours,
+        } => {
+            tokio::task::spawn_blocking(move || hyprland::menu(launcher, history_hours)).await??;
+        }
         Command::Hook { source } => {
             if let Some(agent) = model::Agent::parse(&source) {
                 match tokio::task::spawn_blocking(move || hook::run(agent)).await {

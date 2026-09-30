@@ -1,10 +1,15 @@
-.PHONY: test check release extension preview packages
+.PHONY: test check test-hyprland release extension preview packages
 test:
 	cargo test
 check:
+	python3 scripts/release-notes.py > /dev/null
 	cargo fmt --check
 	cargo clippy --all-targets -- -D warnings
 	glib-compile-schemas --strict --dry-run extension/schemas
+	sh -n scripts/install-user.sh scripts/install-release-user.sh scripts/build-release-packages.sh
+test-hyprland:
+	cargo build --locked
+	dbus-run-session -- python3 tests/hyprland.py "$(or $(CARGO_TARGET_DIR),target)/debug/agent-notifier"
 release:
 	cargo build --release --locked
 extension:
